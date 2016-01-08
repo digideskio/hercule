@@ -1,4 +1,5 @@
 import fs from 'fs';
+import path from 'path';
 import childProcess from 'child_process';
 import _ from 'lodash';
 
@@ -11,11 +12,18 @@ export const TranscludeStream = Transcluder;
 export function transcludeString(...args) {
   const input = args.shift();
   const cb = args.pop();
-  const [options] = args;
+  const [options = {}] = args;
+  let source = 'string';
 
-  const transclude = new Transcluder(options);
+  // relativePath
+  if (_.get(options, 'relativePath')) {
+    source = `${options.relativePath}/string`;
+  }
+
+  const transclude = new Transcluder(source, options);
   let outputString = '';
   let sourcePaths;
+  let sourceMap;
   let cbErr = null;
 
   transclude
@@ -29,7 +37,9 @@ export function transcludeString(...args) {
       if (!cbErr) cbErr = err;
     })
     .on('sources', (srcPaths) => (sourcePaths = srcPaths))
-    .on('end', () => cb(cbErr, outputString, sourcePaths));
+    // TODO: can source be extracted from the sourcemap?
+    .on('sourcemap', (srcmap) => (sourceMap = srcmap))
+    .on('end', () => cb(cbErr, outputString, sourcePaths, sourceMap));
 
   transclude.write(input, 'utf8');
   transclude.end();
@@ -39,12 +49,19 @@ export function transcludeString(...args) {
 export function transcludeFile(...args) {
   const input = args.shift();
   const cb = args.pop();
-  const [options] = args;
+  const [options = {}] = args;
 
-  const transclude = new Transcluder(options);
+  // relativePath
+  if (!_.get(options, 'relativePath')) {
+    options.relativePath = path.basename(input);
+  }
+
+
+  const transclude = new Transcluder(input, options);
   const inputStream = fs.createReadStream(input, { encoding: 'utf8' });
   let outputString = '';
   let sourcePaths;
+  let sourceMap;
   let cbErr = null;
 
   inputStream.on('error', (err) => cb(err));
@@ -60,7 +77,9 @@ export function transcludeFile(...args) {
       if (!cbErr) cbErr = err;
     })
     .on('sources', (srcPaths) => (sourcePaths = srcPaths))
-    .on('end', () => cb(cbErr, outputString, sourcePaths));
+    // TODO: can source be extracted from the sourcemap?
+    .on('sourcemap', (srcmap) => (sourceMap = srcmap))
+    .on('end', () => cb(cbErr, outputString, sourcePaths, sourceMap));
 
   inputStream.pipe(transclude);
 }

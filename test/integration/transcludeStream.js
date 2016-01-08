@@ -9,13 +9,17 @@ import './_mock';
 
 _.forEach((fixtures.fixtures), (fixture) => {
   test.cb(`should transclude ${fixture.name}`, (t) => {
-    const input = fs.createReadStream(fixture.inputFile, { encoding: 'utf8' });
-    const options = { relativePath: path.dirname(fixture.inputFile) };
-    const transclude = new TranscludeStream(options, t.context.log);
     const config = fixture.expectedConfig;
+    const options = {
+      relativePath: path.dirname(fixture.inputFile),
+      source: fixture.inputFile,
+      generatedFile: `${fixture.inputPath}/_expect.md`,
+    };
     let outputString = '';
 
-    if (fixture.expectedConfig.plan > 0) t.plan(fixture.expectedConfig.plan);
+    const transclude = new TranscludeStream(fixture.inputFile, options);
+    const input = fs.createReadStream(fixture.inputFile, { encoding: 'utf8' });
+
     transclude
       .on('readable', function read() {
         let content = null;
@@ -27,6 +31,11 @@ _.forEach((fixtures.fixtures), (fixture) => {
         // All errors should include a message and path
         t.deepEqual(err.message, config.error.message);
         t.regex(err.path, new RegExp(config.error.path));
+      })
+      .on('sourcemap', (outputSourcemap) => {
+        if (fixture.expectedSourcemap) {
+          t.same(outputSourcemap, fixture.expectedSourcemap);
+        }
       })
       .on('end', () => {
         t.deepEqual(outputString, fixture.expectedOutput);

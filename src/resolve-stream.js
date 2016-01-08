@@ -59,6 +59,11 @@ export default function ResolveStream(opt) {
     const parentRefs = _.get(chunk, 'references') || [];
     const parents = _.get(chunk, 'parents') || [];
     const indent = _.get(chunk, 'indent') || '';
+    const sourcePath = path.dirname(sourceFile);
+    const cursor = {
+      line: _.get(chunk, 'line'),
+      column: _.get(chunk, 'column'),
+    };
     const self = this;
 
     function handleError(message, path, error) {

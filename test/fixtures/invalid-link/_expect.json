@@ -1,5 +1,4 @@
 {
-  "plan": 5,
   "error": {
     "message": "Could not read file",
     "path": "fixtures/invalid-link/(i-dont-exist.md|mineral.md)"
