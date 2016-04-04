@@ -23,7 +23,7 @@ export function defaultToken(
 export function defaultSeparator(match, indent = '', source = '') {
   return {
     indent,
-    content: match[0],
+    content: match[MATCH_GROUP],
     source,
   };
 }
