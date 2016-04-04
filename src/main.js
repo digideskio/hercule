@@ -73,11 +73,17 @@ function main() {
   if (args.length === 0) {
     // Reading input from stdin
     inputStream = process.stdin;
+    sourceFile = `${opts.relativePath}/stdin.md`;
     options.relativePath = opts.relativePath;
   } else {
     // Reading input from file
     // TODO: handle file error!
     inputStream = fs.createReadStream(args[0], { encoding: 'utf8' });
+
+    inputStream.on('error', (err) => {
+      process.stdout.write(err);
+      process.exit(1);
+    });
 
     sourceFile = path.normalize(opts._args[0]);
 

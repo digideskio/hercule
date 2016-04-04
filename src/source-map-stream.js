@@ -1,7 +1,7 @@
-import through2 from 'through2';
-import fs from 'fs';
 import path from 'path';
+
 import _ from 'lodash';
+import through2 from 'through2';
 import sourceMap from 'source-map';
 
 function updateCursor(cursor, content) {
@@ -17,7 +17,7 @@ function updateCursor(cursor, content) {
   return { line, column };
 }
 
-export default function SourceMapStream(generatedFile, sourcemapFile, sourcemapCallback) {
+export default function SourceMapStream(generatedFile) {
   const mappings = [];
   let cursor = {
     line: 1,
