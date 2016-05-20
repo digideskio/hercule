@@ -275,7 +275,7 @@ __Arguments__
 - `filepath` - A path to a file to process.
 - `options` - An object of options to be applied when processing input.
   - `relativePath` - A path to which the input `filepath` is relative.
-- `callback(err, [output], [filepaths], [sourcemap])` - A callback which is called after the file at the provided
+- `callback(err, [output], [sourcePaths], [sourcemap])` - A callback which is called after the file at the provided
  `filepath` has been processed. `callback` will be passed an error, processed output, list of transcluded file paths
   and sourcemap object.
 

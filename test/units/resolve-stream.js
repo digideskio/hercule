@@ -75,7 +75,7 @@ test.cb('should resolve simple link to content and emit source', (t) => {
   };
   const testStream = new ResolveStream();
 
-  t.plan(2);
+  t.plan(1);
   testStream.on('readable', function read() {
     let chunk = null;
     while ((chunk = this.read()) !== null) {
@@ -83,7 +83,6 @@ test.cb('should resolve simple link to content and emit source', (t) => {
     }
   });
   testStream.on('error', () => t.fail());
-  testStream.on('source', (source) => t.deepEqual(source, 'fox.md'));
   testStream.on('end', () => t.end());
 
   testStream.write(input);

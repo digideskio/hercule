@@ -17,7 +17,7 @@ function updateCursor(cursor, content) {
   return { line, column };
 }
 
-export default function SourceMapStream(generatedFile) {
+export default function SourceMapStream(generatedFile = 'string') {
   const mappings = [];
   let cursor = {
     line: 1,
@@ -25,13 +25,15 @@ export default function SourceMapStream(generatedFile) {
   };
 
   function transform(chunk, encoding, callback) {
+    this.push(chunk);
+
     const content = chunk.content;
     const originalLocation = {
       line: chunk.line,
       column: chunk.column,
     };
 
-    if (!generatedFile) return callback(null, chunk);
+    if (!generatedFile) return callback();
 
     mappings.push({
       source: path.relative(path.dirname(generatedFile), chunk.source),
@@ -41,7 +43,6 @@ export default function SourceMapStream(generatedFile) {
 
     cursor = updateCursor(cursor, content);
 
-    this.push(chunk);
     return callback();
   }
 

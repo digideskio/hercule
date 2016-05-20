@@ -13,7 +13,7 @@ _.forEach((fixtures.fixtures), (fixture) => {
     const options = {
       relativePath: path.dirname(fixture.inputFile),
       source: fixture.inputFile,
-      generatedFile: `${fixture.inputPath}/_expect.md`,
+      outputFile: `${fixture.inputPath}/_expect.md`,
     };
     let outputString = '';
 
@@ -34,7 +34,7 @@ _.forEach((fixtures.fixtures), (fixture) => {
       })
       .on('sourcemap', (outputSourcemap) => {
         if (fixture.expectedSourcemap) {
-          t.same(outputSourcemap, fixture.expectedSourcemap);
+          t.deepEqual(outputSourcemap, fixture.expectedSourcemap);
         }
       })
       .on('end', () => {

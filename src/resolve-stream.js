@@ -40,7 +40,7 @@ export default function ResolveStream(opt) {
     }
 
     function separator(match) {
-      return defaultSeparator(match, indent);
+      return defaultSeparator(match, { indent });
     }
 
     const tokenizerOptions = { leaveBehind: `${WHITESPACE_GROUP}`, source: link, token, separator };
@@ -59,11 +59,13 @@ export default function ResolveStream(opt) {
     const parentRefs = _.get(chunk, 'references') || [];
     const parents = _.get(chunk, 'parents') || [];
     const indent = _.get(chunk, 'indent') || '';
-    const sourcePath = path.dirname(sourceFile);
-    const cursor = {
-      line: _.get(chunk, 'line'),
-      column: _.get(chunk, 'column'),
-    };
+
+    // SOURCEMAP
+    // const sourcePath = path.dirname(sourceFile);
+    // const cursor = {
+    //   line: _.get(chunk, 'line'),
+    //   column: _.get(chunk, 'column'),
+    // };
     const self = this;
 
     function handleError(message, path, error) {
@@ -83,7 +85,7 @@ export default function ResolveStream(opt) {
       // References from parent files override primary links, then to fallback if provided and no matching references
       const { link, relativePath } = resolveReferences(primary, fallback, parentRefs);
 
-      this.emit('source', link);
+      // this.emit('source', link);
 
       // Resolve link to readable stream
       resolveLink(link, relativePath, (resolveErr, input, resolvedLink, resolvedRelativePath) => {

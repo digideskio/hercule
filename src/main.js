@@ -85,7 +85,7 @@ function main() {
       process.exit(1);
     });
 
-    sourceFile = path.normalize(opts._args[0]);
+    sourceFile = path.normalize(args[0]);
 
     // TODO: remove these two lines
     options.source = path.normalize(args[0]);
@@ -95,12 +95,12 @@ function main() {
   if (opts.output) {
     // Writing output to file
     outputStream = fs.createWriteStream(opts.output, { encoding: 'utf8' });
-    options.generatedFile = opts.output;
+    options.outputFile = opts.output;
     // options.sourcemapFile = `${opts.output}.map`;
   } else {
     // Writing output to stdout
     outputStream = process.stdout;
-    options.generatedFile = 'stdout';
+    options.outputFile = 'stdout';
   }
 
   const transclude = new Transcluder(sourceFile, options);

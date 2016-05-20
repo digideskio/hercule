@@ -17,17 +17,16 @@ import { defaultTokenRegExp, defaultToken, defaultSeparator, WHITESPACE_GROUP } 
 const DEFAULT_OPTIONS = {
   input: 'link',
   output: 'content',
-  source: 'input',
+  source: 'string',
 };
 
 // The sourceFile should be relative to the sourcePath
 export default function Transcluder(sourceFile, opt) {
   const options = _.merge({}, DEFAULT_OPTIONS, opt);
-  const source = _.get(options, 'source');
-  const linkMatch = _.get(options, 'linkMatch');
-  const generatedFile = _.get(options, 'generatedFile');
+  // const sourcePaths = [];
 
-  const sourcePaths = [];
+  // SOURCEMAP
+  const outputFile = _.get(options, 'outputFile');
   let sourceMap;
 
   function token(match) {
@@ -42,9 +41,8 @@ export default function Transcluder(sourceFile, opt) {
   const linkRegExp = _.get(options, 'linkRegExp') || defaultTokenRegExp;
   const tokenizer = regexpTokenizer(tokenizerOptions, linkRegExp);
   const resolver = new ResolveStream({ linkRegExp: options.linkRegExp, linkMatch: options.linkMatch });
-  const inflater = new InflateStream({ linkRegExp, linkMatch, source });
   const indenter = new IndentStream();
-  const sourcemap = new SourceMapStream(generatedFile);
+  const sourcemap = new SourceMapStream(outputFile);
   const stringify = get('content');
 
   tokenizer
@@ -61,16 +59,16 @@ export default function Transcluder(sourceFile, opt) {
   });
 
   // TODO: can source be extracted from the sourcemap?
-  resolver.on('source', (filepath) => {
-    sourcePaths.push(filepath);
-  });
+  // resolver.on('source', (filepath) => {
+  //   sourcePaths.push(filepath);
+  // });
 
   sourcemap.on('sourcemap', (generatedSourceMap) => {
     sourceMap = generatedSourceMap;
   });
 
   transcluder.on('end', () => {
-    transcluder.emit('sources', sourcePaths);
+    transcluder.emit('sources', sourceMap.sources);
     transcluder.emit('sourcemap', sourceMap);
   });
 
