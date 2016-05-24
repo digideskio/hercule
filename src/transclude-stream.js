@@ -40,7 +40,7 @@ export default function Transcluder(sourceFile, opt) {
   const tokenizerOptions = { leaveBehind: `${WHITESPACE_GROUP}`, token, separator };
   const linkRegExp = _.get(options, 'linkRegExp') || defaultTokenRegExp;
   const tokenizer = regexpTokenizer(tokenizerOptions, linkRegExp);
-  const resolver = new ResolveStream({ linkRegExp: options.linkRegExp, linkMatch: options.linkMatch });
+  const resolver = new ResolveStream(sourceFile, { linkRegExp: options.linkRegExp, linkMatch: options.linkMatch });
   const indenter = new IndentStream();
   const sourcemap = new SourceMapStream(outputFile);
   const stringify = get('content');

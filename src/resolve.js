@@ -12,7 +12,7 @@ export function resolveReferences(primary, fallback, references) {
   return override || fallback || primary;
 }
 
-export function parseTransclude(transclusionLink, relativePath, cb) {
+export function parseTransclude(transclusionLink, relativePath, source, cursor, cb) {
   let parsedLink;
   let primary;
   let fallback;
@@ -24,7 +24,16 @@ export function parseTransclude(transclusionLink, relativePath, cb) {
     // Links are relative to their source
     primary = { link: parsedLink.primary, relativePath };
     fallback = parsedLink.fallback ? { link: parsedLink.fallback, relativePath } : null;
-    parsedReferences = _.map(parsedLink.references, ({ placeholder, link }) => ({ placeholder, link, relativePath }));
+    parsedReferences = _.map(parsedLink.references, ({ placeholder, link }) =>
+      ({
+        placeholder,
+        link,
+        relativePath,
+        source,
+        line: cursor.line, // Links cannot span multiple lines
+        column: cursor.column + transclusionLink.indexOf(`${placeholder}`) + placeholder.length + 1,
+      })
+    );
   } catch (ex) {
     return cb(ex);
   }
@@ -47,7 +56,10 @@ export function parseTransclude(transclusionLink, relativePath, cb) {
 * - resolvedRelativePath (string): Will be provided as the relativePath for any nested transclusion
 *
 */
-export function resolveLink(link, relativePath, cb) {
+export function resolveLink(rawLink, cb) {
+  const link = _.get(rawLink, 'link');
+  const relativePath = _.get(rawLink, 'relativePath');
+  const source = _.get(rawLink, 'source');
   let input = '';
   let linkType;
   let resolvedLink;
@@ -60,6 +72,7 @@ export function resolveLink(link, relativePath, cb) {
   }
 
   if (linkType === 'string') {
+    resolvedLink = source;
     input = stringInflater(link.slice(1, -1)); // eslint-disable-line lodash/prefer-lodash-method
   }
 

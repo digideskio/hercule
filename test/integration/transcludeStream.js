@@ -34,7 +34,10 @@ _.forEach((fixtures.fixtures), (fixture) => {
       })
       .on('sourcemap', (outputSourcemap) => {
         if (fixture.expectedSourcemap) {
-          t.deepEqual(outputSourcemap, fixture.expectedSourcemap);
+          // console.log(outputSourcemap.sources);
+          // console.log(outputSourcemap.names);
+          t.deepEqual(outputSourcemap.mappings, fixture.expectedSourcemap.mappings);
+          t.deepEqual(outputSourcemap.sources, fixture.expectedSourcemap.sources);
         }
       })
       .on('end', () => {
