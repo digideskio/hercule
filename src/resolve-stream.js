@@ -24,11 +24,14 @@ import { defaultTokenRegExp, defaultToken, defaultSeparator, WHITESPACE_GROUP } 
 export default function ResolveStream(sourceFile, opt) {
   const options = _.merge({}, opt);
 
-  function inflate(link, relativePath, references, parents, indent) {
+  function inflate(link, relativePath, cursor, references, parents, indent) {
     const resolverStream = new ResolveStream(link);
     const trimmerStream = new TrimStream();
 
-    // console.log(`INFLATE: ${link}, ${relativePath}`);
+    // Sourcemap
+    const line = _.get(cursor, 'line');
+    const column = _.get(cursor, 'column');
+    const source = _.get(cursor, 'source') || link;
 
     function token(match) {
       return _.merge(
@@ -45,7 +48,7 @@ export default function ResolveStream(sourceFile, opt) {
       return defaultSeparator(match, { indent });
     }
 
-    const tokenizerOptions = { leaveBehind: `${WHITESPACE_GROUP}`, source: link, token, separator };
+    const tokenizerOptions = { leaveBehind: `${WHITESPACE_GROUP}`, token, separator, source, line, column };
     const linkRegExp = _.get(options, 'linkRegExp') || defaultTokenRegExp;
     const tokenizerStream = regexpTokenizer(tokenizerOptions, linkRegExp);
 
@@ -62,14 +65,6 @@ export default function ResolveStream(sourceFile, opt) {
     const parents = _.get(chunk, 'parents') || [];
     const indent = _.get(chunk, 'indent') || '';
 
-    // SOURCEMAP
-    // TODO: remove because this is related to link inflation logic
-    // const sourcePath = path.dirname(sourceFile);
-
-    const cursor = {
-      line: _.get(chunk, 'line'),
-      column: _.get(chunk, 'column'),
-    };
     const self = this;
 
     function handleError(message, path, error) {
@@ -80,9 +75,20 @@ export default function ResolveStream(sourceFile, opt) {
 
     if (!transclusionLink) return handleError();
 
+    //  Sourcemap
+    const cursor = {
+      line: _.get(chunk, 'line'),
+      column: _.get(chunk, 'column') + chunk.content.indexOf(transclusionLink),
+    };
+
     // Parses raw transclusion link: primary.link || fallback.link reference.placeholder:reference.link ...
     parseTransclude(transclusionLink, transclusionRelativePath, sourceFile, cursor, (parseErr, primary, fallback, parsedReferences) => {
       if (parseErr) return handleError('Link could not be parsed', transclusionLink, parseErr);
+
+      // console.log('PRIMARY:');
+      // console.log(primary);
+      // console.log('FALLBACK:');
+      // console.log(fallback);
 
       const references = _.uniq([...parsedReferences, ...parentRefs]);
 
@@ -90,13 +96,21 @@ export default function ResolveStream(sourceFile, opt) {
       // const { link, relativePath } = resolveReferences(primary, fallback, parentRefs);
       const link = resolveReferences(primary, fallback, parentRefs);
 
+      // console.log(link);
+
+      // TODO: push extra chunk to document the whole way down?
+
       // Resolve link to readable stream
-      resolveLink(link, (resolveErr, input, resolvedLink, resolvedRelativePath) => {
-        if (resolveErr) return handleError('Link could not be inflated', link, resolveErr);
+      resolveLink(link, (resolveErr, input, resolvedLink, resolvedRelativePath, resolvedSource) => {
+
+        // console.log('----');
+        // console.log(resolvedSource);
+
+        if (resolveErr) return handleError('Link could not be inflated', resolvedLink, resolveErr);
         if (_.includes(parents, resolvedLink)) return handleError('Circular dependency detected', resolvedLink);
 
-        // console.log(resolvedLink);
-        const inflater = inflate(resolvedLink, resolvedRelativePath, references, parents, indent);
+        // TODO: need to consider source so that string can have source information.
+        const inflater = inflate(resolvedLink, resolvedRelativePath, resolvedSource, references, parents, indent);
 
         input.on('error', (inputErr) => {
           this.emit('error', _.merge({ message: 'Could not read file' }, inputErr));

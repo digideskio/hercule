@@ -21,16 +21,33 @@ export function parseTransclude(transclusionLink, relativePath, source, cursor, 
   try {
     parsedLink = transcludeGrammar.parse(transclusionLink);
 
+    // console.log(transclusionLink);
+    // console.log(cursor);
+
     // Links are relative to their source
-    primary = { link: parsedLink.primary, relativePath };
-    fallback = parsedLink.fallback ? { link: parsedLink.fallback, relativePath } : null;
+    primary = {
+      link: parsedLink.primary,
+      relativePath,
+      source,
+      line: cursor.line,
+      column: cursor.column,
+    };
+
+    fallback = parsedLink.fallback ? {
+      link: parsedLink.fallback,
+      relativePath,
+      source,
+      line: cursor.line,
+      column: cursor.column + transclusionLink.indexOf(`${parsedLink.fallback}`) + 1,
+    } : null;
+
     parsedReferences = _.map(parsedLink.references, ({ placeholder, link }) =>
       ({
         placeholder,
         link,
         relativePath,
         source,
-        line: cursor.line, // Links cannot span multiple lines
+        line: cursor.line,
         column: cursor.column + transclusionLink.indexOf(`${placeholder}`) + placeholder.length + 1,
       })
     );
@@ -59,11 +76,18 @@ export function parseTransclude(transclusionLink, relativePath, source, cursor, 
 export function resolveLink(rawLink, cb) {
   const link = _.get(rawLink, 'link');
   const relativePath = _.get(rawLink, 'relativePath');
+
+  // Used by sourcemap
   const source = _.get(rawLink, 'source');
+  const line = _.get(rawLink, 'line');
+  const column = _.get(rawLink, 'column');
+
   let input = '';
   let linkType;
+
   let resolvedLink;
   let resolvedRelativePath;
+  let resolvedSource;
 
   try {
     linkType = linkGrammar.parse(link);
@@ -72,7 +96,7 @@ export function resolveLink(rawLink, cb) {
   }
 
   if (linkType === 'string') {
-    resolvedLink = source;
+    resolvedSource = { source, line, column };
     input = stringInflater(link.slice(1, -1)); // eslint-disable-line lodash/prefer-lodash-method
   }
 
@@ -89,5 +113,5 @@ export function resolveLink(rawLink, cb) {
     input = httpInflater(resolvedLink);
   }
 
-  return cb(null, input, resolvedLink, resolvedRelativePath);
+  return cb(null, input, resolvedLink, resolvedRelativePath, resolvedSource);
 }
