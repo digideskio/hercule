@@ -87,7 +87,6 @@ export function resolveLink(rawLink, cb) {
 
   let resolvedLink;
   let resolvedRelativePath;
-  let resolvedSource;
 
   try {
     linkType = linkGrammar.parse(link);
@@ -96,8 +95,7 @@ export function resolveLink(rawLink, cb) {
   }
 
   if (linkType === 'string') {
-    resolvedSource = { source, line, column };
-    input = stringInflater(link.slice(1, -1)); // eslint-disable-line lodash/prefer-lodash-method
+    input = stringInflater(link.slice(1, -1), source, line, column); // eslint-disable-line lodash/prefer-lodash-method
   }
 
   if (linkType === 'local') {
@@ -113,5 +111,5 @@ export function resolveLink(rawLink, cb) {
     input = httpInflater(resolvedLink);
   }
 
-  return cb(null, input, resolvedLink, resolvedRelativePath, resolvedSource);
+  return cb(null, input, resolvedLink, resolvedRelativePath);
 }

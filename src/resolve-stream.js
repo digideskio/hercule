@@ -24,31 +24,29 @@ import { defaultTokenRegExp, defaultToken, defaultSeparator, WHITESPACE_GROUP } 
 export default function ResolveStream(sourceFile, opt) {
   const options = _.merge({}, opt);
 
-  function inflate(link, relativePath, cursor, references, parents, indent) {
-    const resolverStream = new ResolveStream(link);
+  // Create nested duplex stream
+  // TODO: rename this function for improved clarity
+  function inflate(source, relativePath, references, parents, indent) {
+    const resolverStream = new ResolveStream(source);
     const trimmerStream = new TrimStream();
-
-    // Sourcemap
-    const line = _.get(cursor, 'line');
-    const column = _.get(cursor, 'column');
-    const source = _.get(cursor, 'source') || link;
 
     function token(match) {
       return _.merge(
         defaultToken(match, options, indent),
         {
+          source,
           relativePath,
           references: [...references],
-          parents: [link, ...parents],
+          parents: [source, ...parents],
         }
       );
     }
 
     function separator(match) {
-      return defaultSeparator(match, { indent });
+      return defaultSeparator(match, { indent, source });
     }
 
-    const tokenizerOptions = { leaveBehind: `${WHITESPACE_GROUP}`, token, separator, source, line, column };
+    const tokenizerOptions = { leaveBehind: `${WHITESPACE_GROUP}`, token, separator };
     const linkRegExp = _.get(options, 'linkRegExp') || defaultTokenRegExp;
     const tokenizerStream = regexpTokenizer(tokenizerOptions, linkRegExp);
 
@@ -97,12 +95,9 @@ export default function ResolveStream(sourceFile, opt) {
       const link = resolveReferences(primary, fallback, parentRefs);
 
       // console.log(link);
-
       // TODO: push extra chunk to document the whole way down?
-
       // Resolve link to readable stream
-      resolveLink(link, (resolveErr, input, resolvedLink, resolvedRelativePath, resolvedSource) => {
-
+      resolveLink(link, (resolveErr, input, resolvedLink, resolvedRelativePath) => {
         // console.log('----');
         // console.log(resolvedSource);
 
@@ -110,7 +105,7 @@ export default function ResolveStream(sourceFile, opt) {
         if (_.includes(parents, resolvedLink)) return handleError('Circular dependency detected', resolvedLink);
 
         // TODO: need to consider source so that string can have source information.
-        const inflater = inflate(resolvedLink, resolvedRelativePath, resolvedSource, references, parents, indent);
+        const inflater = inflate(resolvedLink, resolvedRelativePath, references, parents, indent);
 
         input.on('error', (inputErr) => {
           this.emit('error', _.merge({ message: 'Could not read file' }, inputErr));
