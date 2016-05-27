@@ -86,8 +86,10 @@ test.cb('should resolve string link', (t) => {
   const link = '"foo bar"';
   const relativePath = '/foo';
   const source = '/foo/bar.md';
+  const line = 1;
+  const column = 10;
 
-  resolveLink({ link, relativePath, source }, (err, input, resolvedLink, resolvedRelativePath) => {
+  resolveLink({ link, relativePath, source, line, column }, (err, input, resolvedLink, resolvedRelativePath) => {
     t.ifError(err);
     t.falsy(resolvedLink);
     t.falsy(resolvedRelativePath);
@@ -95,7 +97,7 @@ test.cb('should resolve string link', (t) => {
     input.on('error', () => t.fail());
 
     const concatStream = concat((result) => {
-      t.deepEqual(result, [{ content: 'foo bar', source }]);
+      t.deepEqual(result, [{ content: 'foo bar', source, line, column: 11 }]);
       t.end();
     });
 
